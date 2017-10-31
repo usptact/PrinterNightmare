@@ -1,0 +1,7 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/obj/x86/Debug
+/packages/Microsoft.Research.InferNET.2.6.41114.1
