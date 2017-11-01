@@ -180,7 +180,7 @@ public class PrinterNightmare
         CPTWrinkledPrior.ObservedValue = Enumerable.Repeat(Enumerable.Repeat(Beta.Uniform(), 2).ToArray(), 2).ToArray();
         CPTMultPagesPrior.ObservedValue = Enumerable.Repeat(Enumerable.Repeat(Beta.Uniform(), 2).ToArray(), 2).ToArray();
         CPTPaperJamPrior.ObservedValue = Enumerable.Repeat(Enumerable.Repeat(Beta.Uniform(), 2).ToArray(), 2).ToArray();
-
+ 
         // inference
         ProbFusePosterior = Engine.Infer<Beta>(ProbFuse);
         ProbDrumPosterior = Engine.Infer<Beta>(ProbDrum);
@@ -192,6 +192,72 @@ public class PrinterNightmare
         CPTWrinkledPosterior = Engine.Infer<Beta[][]>(CPTWrinkled);
         CPTMultPagesPosterior = Engine.Infer<Beta[][]>(CPTMultPages);
         CPTPaperJamPosterior = Engine.Infer<Beta[][]>(CPTPaperJam);
+    }
+
+    public double QueryProbFuse(
+        bool? burning,
+        bool? quality,
+        bool? wrinkled,
+        bool? multPages,
+        bool? paperJam,
+        Beta probFusePrior,
+        Beta probDrumPrior,
+        Beta probTonerPrior,
+        Beta probPaperPrior,
+        Beta probRollerPrior,
+        Beta[] cptBurningPrior,
+        Beta[][][] cptQualityPrior,
+        Beta[][] cptWrinkledPrior,
+        Beta[][] cptMultPagesPrior,
+        Beta[][] cptPaperJamPrior)
+    {
+        // reset observed data
+        Fuse.ClearObservedValue();
+        Drum.ClearObservedValue();
+        Toner.ClearObservedValue();
+        Paper.ClearObservedValue();
+        Roller.ClearObservedValue();
+
+        // only one issue description is given
+        numExamples.ObservedValue = 1;
+
+        // issue description
+        if (burning.HasValue)
+            this.Burning.ObservedValue = new bool[] { burning.Value };
+        else
+            this.Burning.ClearObservedValue();
+        if (quality.HasValue)
+            this.Quality.ObservedValue = new bool[] { quality.Value };
+        else
+            this.Quality.ClearObservedValue();
+        if (wrinkled.HasValue)
+            this.Wrinkled.ObservedValue = new bool[] { wrinkled.Value };
+        else
+            this.Wrinkled.ClearObservedValue();
+        if (multPages.HasValue)
+            this.MultPages.ObservedValue = new bool[] { multPages.Value };
+        else
+            this.MultPages.ClearObservedValue();
+        if (paperJam.HasValue)
+            this.PaperJam.ObservedValue = new bool[] { paperJam.Value };
+        else
+            this.PaperJam.ClearObservedValue();
+
+        // set model learned parameters from a dataset of previous issues
+        this.ProbFusePrior.ObservedValue = probFusePrior;
+        this.ProbDrumPrior.ObservedValue = probDrumPrior;
+        this.ProbTonerPrior.ObservedValue = probTonerPrior;
+        this.ProbPaperPrior.ObservedValue = probPaperPrior;
+        this.ProbRollerPrior.ObservedValue = probRollerPrior;
+        this.CPTBurningPrior.ObservedValue = cptBurningPrior;
+        this.CPTQualityPrior.ObservedValue = cptQualityPrior;
+        this.CPTWrinkledPrior.ObservedValue = cptWrinkledPrior;
+        this.CPTMultPagesPrior.ObservedValue = cptMultPagesPrior;
+        this.CPTPaperJamPrior.ObservedValue = cptPaperJamPrior;
+
+        // infer Fuse RV (array of 1 element)
+        var fusePosterior = Engine.Infer<Bernoulli[]>(Fuse);
+        return fusePosterior[0].GetProbTrue();
     }
 
     public static VariableArray<bool> AddChildFromOneParent(VariableArray<bool> parent, VariableArray<double> cpt)
@@ -219,12 +285,12 @@ public class PrinterNightmare
                 using (Variable.If(parent2[n]))
                     child[n] = Variable.Bernoulli(cpt[0][0]);
                 using (Variable.IfNot(parent2[n]))
-                    child[n] = Variable.Bernoulli(cpt[0][1]);
+                    child[n] = Variable.Bernoulli(cpt[1][0]);
             }
             using (Variable.IfNot(parent1[n]))
             {
                 using (Variable.If(parent2[n]))
-                    child[n] = Variable.Bernoulli(cpt[1][0]);
+                    child[n] = Variable.Bernoulli(cpt[0][1]);
                 using (Variable.IfNot(parent2[n]))
                     child[n] = Variable.Bernoulli(cpt[1][1]);
             }
@@ -238,36 +304,37 @@ public class PrinterNightmare
         var child = Variable.Array<bool>(n);
         using (Variable.ForEach(n))
         {
+            var parent2n = parent2[n] & Variable.Bernoulli(1.0);        // bug workaround
             using (Variable.If(parent1[n]))
             {
-                using (Variable.If(parent2[n]))
+                using (Variable.If(parent2n))
                 {
                     using (Variable.If(parent3[n]))
                         child[n] = Variable.Bernoulli(cpt[0][0][0]);
                     using (Variable.IfNot(parent3[n]))
-                        child[n] = Variable.Bernoulli(cpt[0][0][1]);
+                        child[n] = Variable.Bernoulli(cpt[1][0][0]);
                 }
-                using (Variable.IfNot(parent2[n]))
+                using (Variable.IfNot(parent2n))
                 {
                     using (Variable.If(parent3[n]))
                         child[n] = Variable.Bernoulli(cpt[0][1][0]);
                     using (Variable.IfNot(parent3[n]))
-                        child[n] = Variable.Bernoulli(cpt[0][1][1]);
+                        child[n] = Variable.Bernoulli(cpt[1][1][0]);
                 }
             }
             using (Variable.IfNot(parent1[n]))
             {
-                using (Variable.If(parent2[n]))
+                using (Variable.If(parent2n))
                 {
                     using (Variable.If(parent3[n]))
-                        child[n] = Variable.Bernoulli(cpt[1][0][0]);
+                        child[n] = Variable.Bernoulli(cpt[0][0][1]);
                     using (Variable.IfNot(parent3[n]))
                         child[n] = Variable.Bernoulli(cpt[1][0][1]);
                 }
-                using (Variable.IfNot(parent2[n]))
+                using (Variable.IfNot(parent2n))
                 {
                     using (Variable.If(parent3[n]))
-                        child[n] = Variable.Bernoulli(cpt[1][1][0]);
+                        child[n] = Variable.Bernoulli(cpt[0][1][1]);
                     using (Variable.IfNot(parent3[n]))
                         child[n] = Variable.Bernoulli(cpt[1][1][1]);
                 }
@@ -299,24 +366,35 @@ public class PrinterNightmare
         Rand.Restart(2017);
 
         PrinterNightmare model = new PrinterNightmare();
-        if (model.Engine.Algorithm is GibbsSampling)
-        {
-            Console.WriteLine("This example does not run with Gibbs Sampling.");
-            return;
-        }
+
+        Console.WriteLine("\n******************************************************");
+        Console.WriteLine("Step 1: Learning parameters from data (uniform priors)");
+        Console.WriteLine("******************************************************");
 
         bool[][] data = GetData();
 
         try
         {
+            // learn model parameters from data with uniform priors
             model.LearnParameters(data[0], data[1], data[2], data[3], data[4],
                               data[5], data[6], data[7], data[8], data[9]);
         }
-        catch(NullReferenceException nullRefEx)
+        catch(NullReferenceException ex)
         {
-            Console.WriteLine(nullRefEx);
+            Console.WriteLine(ex);
         }
-        
+
+        Console.WriteLine("\n******************************************************");
+        Console.WriteLine("Step 2: Query the model for P(Fuse | Burn, Paper Jam)");
+        Console.WriteLine("******************************************************");
+
+        double probFuseGivenBurningAndPaperJam = model.QueryProbFuse(
+            true, false, false, false, true,    // set an issue indicator to null if it is unobserved (unknown)
+            model.ProbFusePosterior, model.ProbDrumPosterior, model.ProbTonerPosterior, model.ProbPaperPosterior, model.ProbRollerPosterior,
+            model.CPTBurningPosterior, model.CPTQualityPosterior, model.CPTWrinkledPosterior, model.CPTMultPagesPosterior, model.CPTPaperJamPosterior);
+
+        Console.WriteLine("P(Fuse = True | Burn, Paper Jam) = {0:0.00}", probFuseGivenBurningAndPaperJam);
+
         Console.ReadKey();
     }
 }
