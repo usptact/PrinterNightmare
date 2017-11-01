@@ -46,6 +46,18 @@ public class PrinterNightmare
     public VariableArray<VariableArray<Beta>, Beta[][]> CPTMultPagesPrior;
     public VariableArray<VariableArray<Beta>, Beta[][]> CPTPaperJamPrior;
 
+    // posterior distributions for the probability and CPT variables
+    public Beta ProbFusePosterior;
+    public Beta ProbDrumPosterior;
+    public Beta ProbTonerPosterior;
+    public Beta ProbPaperPosterior;
+    public Beta ProbRollerPosterior;
+    public Beta[] CPTBurningPosterior;
+    public Beta[][][] CPTQualityPosterior;
+    public Beta[][] CPTWrinkledPosterior;
+    public Beta[][] CPTMultPagesPosterior;
+    public Beta[][] CPTPaperJamPosterior;
+
     public InferenceEngine Engine = new InferenceEngine();
 
     public PrinterNightmare()
@@ -131,6 +143,40 @@ public class PrinterNightmare
         PaperJam = AddChildFromTwoParents(Fuse, Roller, CPTPaperJam);
     }
 
+    public void LearnParameters(
+            bool[] fuse, bool[] drum, bool[] toner, bool[] paper, bool[] roller,
+            bool[] burning, bool[] quality, bool[] wrinkled, bool[] multPages, bool[] paperJam
+        )
+    {
+        // set number of examples at runtime;
+        // assuming all data arrays are of the same length
+        numExamples.ObservedValue = fuse.Length;
+
+        // set data
+        Fuse.ObservedValue = fuse;
+        Drum.ObservedValue = drum;
+        Toner.ObservedValue = toner;
+        Paper.ObservedValue = paper;
+        Roller.ObservedValue = roller;
+        Burning.ObservedValue = burning;
+        Quality.ObservedValue = quality;
+        Wrinkled.ObservedValue = wrinkled;
+        MultPages.ObservedValue = multPages;
+        PaperJam.ObservedValue = paperJam;
+
+        // inference
+        ProbFusePosterior = Engine.Infer<Beta>(ProbFuse);
+        ProbDrumPosterior = Engine.Infer<Beta>(ProbDrum);
+        ProbTonerPosterior = Engine.Infer<Beta>(ProbToner);
+        ProbPaperPosterior = Engine.Infer<Beta>(ProbPaper);
+        ProbRollerPosterior = Engine.Infer<Beta>(ProbRoller);
+        CPTBurningPosterior = Engine.Infer<Beta[]>(CPTBurning);
+        CPTQualityPosterior = Engine.Infer<Beta[][][]>(CPTQuality);
+        CPTWrinkledPosterior = Engine.Infer<Beta[][]>(CPTWrinkled);
+        CPTMultPagesPosterior = Engine.Infer<Beta[][]>(CPTMultPages);
+        CPTPaperJamPosterior = Engine.Infer<Beta[][]>(CPTPaperJam);
+    }
+
     public static VariableArray<bool> AddChildFromOneParent(VariableArray<bool> parent, VariableArray<double> cpt)
     {
         var n = parent.Range;
@@ -213,9 +259,38 @@ public class PrinterNightmare
         return child;
     }
 
+    public static bool[][] GetData()
+    {
+        bool[][] data = new bool[][]
+        {
+            new bool[] { false, false, false, true, false, false, false, false, false, false, false, false, true, false, true },    // fuse assembly malfunction
+            new bool[] { false, false, false, false, true, false, false, true, false, false, true, true, false, false, false },     // drum unit
+            new bool[] { true, true, false, false, false, true, false, true, false, false, false, true, false, false, false },      // toner out
+            new bool[] { true, false, true, false, true, false, true, false, true, true, false, true, true, false, false },         // poor paper quality
+            new bool[] { false, false, false, false, false, false, true, false, false, false, false, false, false, true, true },    // worn roller
+            new bool[] { false, false, false, true, false, false, false, false, false, false, false, false, true, false, false },   // burning smell
+            new bool[] { true, true, true, false, true, true, false, true, false, false, true, true, false, false, false },         // poor print quality
+            new bool[] { false, false, true, false, false, false, false, false, true, false, false, false, true, true, true },      // wrinkled pages
+            new bool[] { false, false, true, false, false, false, true, false, true, false, false, false, false, false, true },     // multiple pages fed
+            new bool[] { false, false, true, true, false, false, true, true, true, true, false, false, false, true, true }          // paper jam
+        };
+        return data;
+    }
+
     public static void Main()
     {
-        Console.WriteLine("Hello!");
-        Console.ReadKey();
+        Rand.Restart(2017);
+
+        PrinterNightmare model = new PrinterNightmare();
+        if (model.Engine.Algorithm is GibbsSampling)
+        {
+            Console.WriteLine("This example does not run with Gibbs Sampling.");
+            return;
+        }
+
+        bool[][] data = GetData();
+
+        model.LearnParameters(data[0], data[1], data[2], data[3], data[4],
+                              data[5], data[6], data[7], data[8], data[9]);
     }
 }
