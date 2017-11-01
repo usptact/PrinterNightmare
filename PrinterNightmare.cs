@@ -62,85 +62,90 @@ public class PrinterNightmare
 
     public PrinterNightmare()
 	{
-        numExamples = Variable.New<int>();
+        numExamples = Variable.New<int>().Named("numExample");
         Range nRange = new Range(numExamples);
 
-        Range fuseRange = new Range(2);
-        Range drumRange = new Range(2);
-        Range tonerRange = new Range(2);
-        Range paperRange = new Range(2);
-        Range rollerRange = new Range(2);
-        Range burningRange = new Range(2);
-        Range qualityRange = new Range(2);
-        Range wrinkledRange = new Range(2);
-        Range multPagesRange = new Range(2);
-        Range paperJamRange = new Range(2);
+        Range fuseRange = new Range(2).Named("fuseRange");
+        Range drumRange = new Range(2).Named("drumRange");
+        Range tonerRange = new Range(2).Named("tonerRange");
+        Range paperRange = new Range(2).Named("paperRange");
+        Range rollerRange = new Range(2).Named("rollerRange");
+        Range burningRange = new Range(2).Named("burningRange");
+        Range qualityRange = new Range(2).Named("qualityRange");
+        Range wrinkledRange = new Range(2).Named("wrinkledRange");
+        Range multPagesRange = new Range(2).Named("multPagesRange");
+        Range paperJamRange = new Range(2).Named("paperJamRange");
 
         //
         // define priors and the parameters
         //
 
-        ProbFusePrior = Variable.New<Beta>();
-        ProbFuse = Variable<double>.Random(ProbFusePrior);
+        ProbFusePrior = Variable.New<Beta>().Named("ProbFusePrior");
+        ProbFuse = Variable<double>.Random(ProbFusePrior).Named("ProbFuse");
+        ProbFuse.SetValueRange(fuseRange);
 
-        ProbDrumPrior = Variable.New<Beta>();
-        ProbDrum = Variable<double>.Random(ProbDrumPrior);
+        ProbDrumPrior = Variable.New<Beta>().Named("ProbDrumPrior");
+        ProbDrum = Variable<double>.Random(ProbDrumPrior).Named("ProbDrum");
+        ProbDrum.SetValueRange(drumRange);
 
-        ProbTonerPrior = Variable.New<Beta>();
-        ProbToner = Variable<double>.Random(ProbTonerPrior);
+        ProbTonerPrior = Variable.New<Beta>().Named("ProbTonerPrior");
+        ProbToner = Variable<double>.Random(ProbTonerPrior).Named("ProbToner");
+        ProbToner.SetValueRange(tonerRange);
 
-        ProbPaperPrior = Variable.New<Beta>();
-        ProbPaper = Variable<double>.Random(ProbPaperPrior);
+        ProbPaperPrior = Variable.New<Beta>().Named("ProbPaperPrior");
+        ProbPaper = Variable<double>.Random(ProbPaperPrior).Named("ProbPaper");
+        ProbPaper.SetValueRange(paperRange);
 
-        ProbRollerPrior = Variable.New<Beta>();
-        ProbRoller = Variable<double>.Random(ProbRollerPrior);
+        ProbRollerPrior = Variable.New<Beta>().Named("ProbRollerPrior");
+        ProbRoller = Variable<double>.Random(ProbRollerPrior).Named("Probroller");
+        ProbRoller.SetValueRange(rollerRange);
 
-        CPTBurningPrior = Variable.Array<Beta>(fuseRange);
-        CPTBurning = Variable.Array<double>(fuseRange);
+        CPTBurningPrior = Variable.Array<Beta>(fuseRange).Named("ProbBurningPrior");
+        CPTBurning = Variable.Array<double>(fuseRange).Named("CPTBurning");
         CPTBurning[fuseRange] = Variable<double>.Random(CPTBurningPrior[fuseRange]);
         CPTBurning.SetValueRange(burningRange);
 
-        CPTQualityPrior = Variable.Array(Variable.Array(Variable.Array<Beta>(drumRange), tonerRange), paperRange);
-        CPTQuality = Variable.Array(Variable.Array(Variable.Array<double>(drumRange), tonerRange), paperRange);
+        CPTQualityPrior = Variable.Array(Variable.Array(Variable.Array<Beta>(drumRange), tonerRange), paperRange).Named("ProbQualityPrior");
+        CPTQuality = Variable.Array(Variable.Array(Variable.Array<double>(drumRange), tonerRange), paperRange).Named("CPTQuality");
         CPTQuality[paperRange][tonerRange][drumRange] = Variable<double>.Random(CPTQualityPrior[paperRange][tonerRange][drumRange]);
         CPTQuality.SetValueRange(qualityRange);
 
-        CPTWrinkledPrior = Variable.Array(Variable.Array<Beta>(fuseRange), paperRange);
-        CPTWrinkled = Variable.Array(Variable.Array<double>(fuseRange), paperRange);
+        CPTWrinkledPrior = Variable.Array(Variable.Array<Beta>(fuseRange), paperRange).Named("ProbWrinkledPrior");
+        CPTWrinkled = Variable.Array(Variable.Array<double>(fuseRange), paperRange).Named("CPTWrinkled");
         CPTWrinkled[paperRange][fuseRange] = Variable<double>.Random(CPTWrinkledPrior[paperRange][fuseRange]);
         CPTWrinkled.SetValueRange(wrinkledRange);
 
-        CPTMultPagesPrior = Variable.Array(Variable.Array<Beta>(rollerRange), paperRange);
-        CPTMultPages = Variable.Array(Variable.Array<double>(rollerRange), paperRange);
+        CPTMultPagesPrior = Variable.Array(Variable.Array<Beta>(rollerRange), paperRange).Named("ProbMultPagesPrior");
+        CPTMultPages = Variable.Array(Variable.Array<double>(rollerRange), paperRange).Named("CPTMultPages");
         CPTMultPages[paperRange][rollerRange] = Variable<double>.Random(CPTMultPagesPrior[paperRange][rollerRange]);
         CPTMultPages.SetValueRange(multPagesRange);
 
-        CPTPaperJamPrior = Variable.Array(Variable.Array<Beta>(rollerRange), fuseRange);
-        CPTPaperJam = Variable.Array(Variable.Array<double>(rollerRange), fuseRange);
+        CPTPaperJamPrior = Variable.Array(Variable.Array<Beta>(rollerRange), fuseRange).Named("ProbPaperJamPrior");
+        CPTPaperJam = Variable.Array(Variable.Array<double>(rollerRange), fuseRange).Named("CPTPaperJam");
         CPTPaperJam[fuseRange][rollerRange] = Variable<double>.Random(CPTPaperJamPrior[fuseRange][rollerRange]);
         CPTPaperJam.SetValueRange(paperJamRange);
 
         // define primary RVs
-        Fuse = Variable.Array<bool>(nRange);
+        Fuse = Variable.Array<bool>(nRange).Named("Fuse");
         Fuse[nRange] = Variable.Bernoulli(ProbFuse).ForEach(nRange);
 
-        Drum = Variable.Array<bool>(nRange);
+        Drum = Variable.Array<bool>(nRange).Named("Drum");
         Drum[nRange] = Variable.Bernoulli(ProbDrum).ForEach(nRange);
 
-        Toner = Variable.Array<bool>(nRange);
+        Toner = Variable.Array<bool>(nRange).Named("Toner");
         Toner[nRange] = Variable.Bernoulli(ProbToner).ForEach(nRange);
 
-        Paper = Variable.Array<bool>(nRange);
+        Paper = Variable.Array<bool>(nRange).Named("Paper");
         Paper[nRange] = Variable.Bernoulli(ProbPaper).ForEach(nRange);
 
-        Roller = Variable.Array<bool>(nRange);
+        Roller = Variable.Array<bool>(nRange).Named("Roller");
         Roller[nRange] = Variable.Bernoulli(ProbRoller).ForEach(nRange);
 
-        Burning = AddChildFromOneParent(Fuse, CPTBurning);
-        Quality = AddChildFromThreeParents(Drum, Toner, Paper, CPTQuality);
-        Wrinkled = AddChildFromTwoParents(Fuse, Paper, CPTWrinkled);
-        MultPages = AddChildFromTwoParents(Paper, Roller, CPTMultPages);
-        PaperJam = AddChildFromTwoParents(Fuse, Roller, CPTPaperJam);
+        Burning = AddChildFromOneParent(Fuse, CPTBurning).Named("Burning");
+        Quality = AddChildFromThreeParents(Drum, Toner, Paper, CPTQuality).Named("Quality");
+        Wrinkled = AddChildFromTwoParents(Fuse, Paper, CPTWrinkled).Named("Wrinkled");
+        MultPages = AddChildFromTwoParents(Paper, Roller, CPTMultPages).Named("MultPages");
+        PaperJam = AddChildFromTwoParents(Fuse, Roller, CPTPaperJam).Named("PaperJam");
     }
 
     public void LearnParameters(
@@ -163,6 +168,18 @@ public class PrinterNightmare
         Wrinkled.ObservedValue = wrinkled;
         MultPages.ObservedValue = multPages;
         PaperJam.ObservedValue = paperJam;
+
+        // set uniform priors
+        ProbFusePrior.ObservedValue = Beta.Uniform();
+        ProbDrumPrior.ObservedValue = Beta.Uniform();
+        ProbTonerPrior.ObservedValue = Beta.Uniform();
+        ProbPaperPrior.ObservedValue = Beta.Uniform();
+        ProbRollerPrior.ObservedValue = Beta.Uniform();
+        CPTBurningPrior.ObservedValue = Enumerable.Repeat(Beta.Uniform(), 2).ToArray();
+        CPTQualityPrior.ObservedValue = Enumerable.Repeat(Enumerable.Repeat(Enumerable.Repeat(Beta.Uniform(), 2).ToArray(), 2).ToArray(), 2).ToArray();
+        CPTWrinkledPrior.ObservedValue = Enumerable.Repeat(Enumerable.Repeat(Beta.Uniform(), 2).ToArray(), 2).ToArray();
+        CPTMultPagesPrior.ObservedValue = Enumerable.Repeat(Enumerable.Repeat(Beta.Uniform(), 2).ToArray(), 2).ToArray();
+        CPTPaperJamPrior.ObservedValue = Enumerable.Repeat(Enumerable.Repeat(Beta.Uniform(), 2).ToArray(), 2).ToArray();
 
         // inference
         ProbFusePosterior = Engine.Infer<Beta>(ProbFuse);
@@ -272,7 +289,7 @@ public class PrinterNightmare
             new bool[] { true, true, true, false, true, true, false, true, false, false, true, true, false, false, false },         // poor print quality
             new bool[] { false, false, true, false, false, false, false, false, true, false, false, false, true, true, true },      // wrinkled pages
             new bool[] { false, false, true, false, false, false, true, false, true, false, false, false, false, false, true },     // multiple pages fed
-            new bool[] { false, false, true, true, false, false, true, true, true, true, false, false, false, true, true }          // paper jam
+            new bool[] { false, false, true, true, false, false, true, true, true, true, false, false, false, true, false }          // paper jam
         };
         return data;
     }
@@ -290,7 +307,16 @@ public class PrinterNightmare
 
         bool[][] data = GetData();
 
-        model.LearnParameters(data[0], data[1], data[2], data[3], data[4],
+        try
+        {
+            model.LearnParameters(data[0], data[1], data[2], data[3], data[4],
                               data[5], data[6], data[7], data[8], data[9]);
+        }
+        catch(NullReferenceException nullRefEx)
+        {
+            Console.WriteLine(nullRefEx);
+        }
+        
+        Console.ReadKey();
     }
 }
