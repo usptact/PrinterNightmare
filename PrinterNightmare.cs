@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
-using MicrosoftResearch.Infer;
-using MicrosoftResearch.Infer.Models;
-using MicrosoftResearch.Infer.Distributions;
-using MicrosoftResearch.Infer.Maths;
+using Microsoft.ML.Probabilistic.Models;
+using Microsoft.ML.Probabilistic.Distributions;
+using Microsoft.ML.Probabilistic.Math;
 
 public class PrinterNightmare
 {
